@@ -15,5 +15,5 @@ It happened that the secretary wanted to resign, we had to go through the book f
 and verify that it matches with what she was leaving behind. 
 
 ### Technology
-This project is built with Django python rest framework.
-Posgrsql Database.
+1. This project is built with Django python rest framework.
+2. Posgrsql Database.
