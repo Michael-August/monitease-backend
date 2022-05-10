@@ -16,4 +16,4 @@ and verify that it matches with what she was leaving behind.
 
 ### Technology
 1. This project is built with Django python rest framework.
-2. Posgrsql Database.
+2. mysql Database.
