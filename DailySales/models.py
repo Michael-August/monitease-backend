@@ -7,7 +7,7 @@ PAYMENT_METHOD = (
     ('TRANSFER', 'transfer'),
 )
 
-class ItemSold(models.Model):
+class Products(models.Model):
     item_name = models.CharField(max_length=80)
     quantity = models.IntegerField()
 
@@ -17,14 +17,14 @@ class ItemSold(models.Model):
 
 class DailySales(models.Model):
     customername = models.CharField(max_length=100)
-    itemsold = models.ForeignKey(ItemSold, related_name="soldItem", on_delete=models.CASCADE)
+    itemsold = models.ForeignKey(Products, related_name="soldItem", on_delete=models.CASCADE)
     quantity = models.IntegerField()
     rate = models.IntegerField()
     totalprice = models.IntegerField(default=0)
-    datesold = models.DateTimeField(auto_now_add=True, auto_now=False)
+    datesold = models.DateField(auto_now_add=True, auto_now=False)
     paymentmethod = models.CharField(max_length=40, choices=PAYMENT_METHOD, default=PAYMENT_METHOD[0][0])
     havepaid = models.BooleanField(default=False)
-    datepaid = models.DateTimeField(auto_now_add=False, auto_now=True)
+    datepaid = models.DateField(auto_now_add=False, auto_now=True)
 
     class Meta:
         verbose_name_plural = 'Daily Sales'

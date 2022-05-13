@@ -1,20 +1,22 @@
+import datetime
 from unicodedata import name
 from django.shortcuts import render, get_object_or_404
 from rest_framework import generics, status
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from .serializers import DailySalesSerializer, ItemSoldSerializer
-from .models import DailySales, ItemSold
+from .serializers import DailySalesSerializer, ProductsSerializer, ScheduledSalesReportSerializer
+from .models import DailySales, Products
+from django.db.models import Sum
 
 # Create your views here.
 
-class ItemsSoldView(generics.GenericAPIView):
-    serializer_class = ItemSoldSerializer
+class ProductsView(generics.GenericAPIView):
+    serializer_class = ProductsSerializer
     name = "Stock Items"
-    queryset = ItemSold.objects.all()
+    queryset = Products.objects.all()
 
     def get(self, request):
-        items = ItemSold.objects.all()
+        items = Products.objects.all()
         serializer = self.serializer_class(instance=items, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -35,7 +37,15 @@ class DailySalesListView(generics.GenericAPIView):
     name = 'Daily Sales List'
     filter_backends = (DjangoFilterBackend,)
 
-    filterset_fields = ('customername','havepaid', 'datesold', 'itemsold', 'datepaid')
+    # filterset_fields = ('customername','havepaid', 'datesold', 'itemsold', 'datepaid')
+
+    filterset_fields = {
+        'datesold': ['gte', 'lte', 'exact'],
+        'customername': ['exact'],
+        'havepaid': ['exact'],
+        'itemsold': ['exact'],
+        'datepaid': ['gte', 'lte', 'exact']
+    }
 
     def get(self, request):
         sales = self.filter_queryset(self.get_queryset())
@@ -50,7 +60,7 @@ class DailySalesListView(generics.GenericAPIView):
             serializer.save()
 
             item_sold_quantity = serializer.data.get('quantity')
-            item_sold = ItemSold.objects.get(pk=serializer.data.get('itemsold'))
+            item_sold = Products.objects.get(pk=serializer.data.get('itemsold'))
             item_sold.quantity = item_sold.quantity - item_sold_quantity
             item_sold.save()
 
@@ -77,7 +87,7 @@ class DailySalesDetailView(generics.GenericAPIView):
             serializer.save()
             
             item_sold_quantity = serializer.data.get('quantity')
-            item_sold = ItemSold.objects.get(pk=serializer.data.get('itemsold'))
+            item_sold = Products.objects.get(pk=serializer.data.get('itemsold'))
             item_sold.quantity = item_sold.quantity - item_sold_quantity
             item_sold.save()
 
@@ -89,4 +99,49 @@ class DailySalesDetailView(generics.GenericAPIView):
         sale = get_object_or_404(DailySales, pk=sales_id)
         sale.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SalesFilteredReportView(generics.GenericAPIView):
+    serializer_class = DailySalesSerializer
+    name = 'Filterable Report'
+    queryset = DailySales.objects.all()
+
+    filter_backends = (DjangoFilterBackend,)
+
+    filterset_fields = {
+        'datesold': ['gte', 'lte']
+    }
+
+    def get(self, request):
+        sales = self.filter_queryset(self.get_queryset())
+        # sales = DailySales.objects.filter(datesold=datetime.datetime.now())
+        total = DailySales.objects.aggregate(Sum('totalprice'))['totalprice__sum']
+        print(total)
+        serializer = self.serializer_class(instance=sales, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+class SalesReportView(generics.GenericAPIView):
+    serializer_class = DailySalesSerializer
+    name = 'Report'
+    queryset = DailySales.objects.all()
+
+    def get(self, reques):
+        sales = DailySales.objects.filter(datesold=datetime.datetime.now())
+        total = DailySales.objects.aggregate(Sum('totalprice'))['totalprice__sum']
+        print(total)
+        serializer = self.serializer_class(instance=sales, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+class ScheduledSalesReportView(generics.GenericAPIView):
+    # serializer_class = ScheduledSalesReportSerializer
+    # name = 'Report'
+    # queryset = DailySales.objects.all()
+
+    # def get(self,request):
+    #     report = DailySales.objects.all()
+    #     serializer = self.serializer_class(instance=report, many=True)
+    #     return Response(data=serializer.data, status=status.HTTP_200_OK)
+    pass
 
