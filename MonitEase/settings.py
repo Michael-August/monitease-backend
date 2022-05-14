@@ -136,7 +136,3 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Customized 
-DATETIME_FORMAT = '%d-%m-%Y %H:%M:%S'
-USE_L10N = False
-USE_TZ = True  # if you plan to disable timezone support

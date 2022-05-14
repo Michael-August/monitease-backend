@@ -1,6 +1,6 @@
 import datetime
-from unicodedata import name
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
+from MonitEase.pagination import CustomPageNumberPagination
 from rest_framework import generics, status
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -33,6 +33,7 @@ class ProductsView(generics.GenericAPIView):
 
 class DailySalesListView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
+    pagination_class = CustomPageNumberPagination
     queryset = DailySales.objects.all()
     name = 'Daily Sales List'
     filter_backends = (DjangoFilterBackend,)
@@ -49,6 +50,14 @@ class DailySalesListView(generics.GenericAPIView):
 
     def get(self, request):
         sales = self.filter_queryset(self.get_queryset())
+
+        # Handling Pagination
+
+        page = self.paginate_queryset(sales)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
         serializer = self.serializer_class(instance=sales, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -127,7 +136,7 @@ class SalesReportView(generics.GenericAPIView):
     queryset = DailySales.objects.all()
 
     def get(self, reques):
-        sales = DailySales.objects.filter(datesold=datetime.datetime.now())
+        sales = DailySales.objects.filter(datesold=datetime.datetime.today())
         total = DailySales.objects.aggregate(Sum('totalprice'))['totalprice__sum']
         print(total)
         serializer = self.serializer_class(instance=sales, many=True)
