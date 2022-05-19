@@ -4,9 +4,16 @@ from MonitEase.pagination import CustomPageNumberPagination
 from rest_framework import generics, status
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from .serializers import DailySalesSerializer, ProductsSerializer, ScheduledSalesReportSerializer
+from .serializers import DailySalesSerializer, ProductsSerializer, UpdateDatePaidSerializer
 from .models import DailySales, Products
 from django.db.models import Sum
+
+# Imports for pdf generating
+from django.http import FileResponse
+import io
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
+from reportlab.lib.pagesizes import letter
 
 # Create your views here.
 
@@ -78,6 +85,27 @@ class DailySalesListView(generics.GenericAPIView):
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
+class UpdateHavePaid(generics.GenericAPIView):
+    serializer_class = UpdateDatePaidSerializer
+    name = 'Update Have Paid'
+    
+    def put(self, request, sales_id):
+        data = request.data
+        sale = DailySales.objects.get(pk=sales_id)
+        
+        sale.havepaid = data.get('havepaid', sale.havepaid)
+        sale.datepaid = data.get('datepaid', sale.datepaid)
+
+        serializer = self.serializer_class(data=data, instance=sale)
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+            
+        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
 class DailySalesDetailView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
     name = 'Get by Id and Delete Daily Sales'
@@ -124,10 +152,10 @@ class SalesFilteredReportView(generics.GenericAPIView):
     def get(self, request):
         sales = self.filter_queryset(self.get_queryset())
         # sales = DailySales.objects.filter(datesold=datetime.datetime.now())
-        total = DailySales.objects.aggregate(Sum('totalprice'))['totalprice__sum']
+        total = sales.aggregate(Sum('totalprice'))['totalprice__sum']
         print(total)
         serializer = self.serializer_class(instance=sales, many=True)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(data={'data': serializer.data, 'total': total}, status=status.HTTP_200_OK)
 
 
 class SalesReportView(generics.GenericAPIView):
@@ -137,20 +165,68 @@ class SalesReportView(generics.GenericAPIView):
 
     def get(self, reques):
         sales = DailySales.objects.filter(datesold=datetime.datetime.today())
-        total = DailySales.objects.aggregate(Sum('totalprice'))['totalprice__sum']
+        total = DailySales.objects.filter(datesold=datetime.datetime.today()).aggregate(Sum('totalprice'))['totalprice__sum']
         print(total)
         serializer = self.serializer_class(instance=sales, many=True)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(data={'data': serializer.data, 'total': total}, status=status.HTTP_200_OK)
+
+    def report_pdf(self, request):
+
+        sales = DailySales.objects.filter(datesold=datetime.datetime.today())
+        total = DailySales.objects.filter(datesold=datetime.datetime.today()).aggregate(Sum('totalprice'))['totalprice__sum']
+        print(total)
+        serializer = self.serializer_class(instance=sales, many=True)
+
+        # Create a buffer
+        buf = io.BytesIO()
+
+        # Create a canvas
+        canva = canvas.Canvas(buf, pagesize=letter, bottomup=0)
+
+        # Create a text object
+        textOb = canva.beginText()
+        textOb.setTextOrigin(inch, inch)
+        textOb.setFont("Helvetica", 14)
+
+        # Add lines of text
+        for item in serializer.data:
+            textOb.textLine(item)
+
+        canva.drawText(textOb)
+        canva.showPage()
+        canva.save()
+        buf.seek(0)
+
+        return FileResponse(buf, as_attachment=True, filename='daily_report.pdf')
 
 
-class ScheduledSalesReportView(generics.GenericAPIView):
-    # serializer_class = ScheduledSalesReportSerializer
-    # name = 'Report'
-    # queryset = DailySales.objects.all()
+class MonthlyReportView(generics.GenericAPIView):
+    serializer_class = DailySalesSerializer
+    name = 'Monthly Report'
+    queryset = DailySales.objects.all()
 
-    # def get(self,request):
-    #     report = DailySales.objects.all()
-    #     serializer = self.serializer_class(instance=report, many=True)
-    #     return Response(data=serializer.data, status=status.HTTP_200_OK)
-    pass
+
+    def get(self,request):
+        last_30days = datetime.datetime.today() - datetime.timedelta(30)
+        report = DailySales.objects.filter(datesold__gte=last_30days)
+        total = report.aggregate(Sum('totalprice'))['totalprice__sum']
+        print(total)
+        serializer = self.serializer_class(instance=report, many=True)
+        return Response(data={'data': serializer.data, 'total': total}, status=status.HTTP_200_OK)
+
+
+class WeeklyReportView(generics.GenericAPIView):
+    serializer_class = DailySalesSerializer
+    name = 'Weekly Report'
+    queryset = DailySales.objects.all()
+
+
+    def get(self,request):
+        last_7days = datetime.datetime.today() - datetime.timedelta(7)
+        report = DailySales.objects.filter(datesold__gte=last_7days)
+        total = report.aggregate(Sum('totalprice'))['totalprice__sum']
+        print(total)
+        serializer = self.serializer_class(instance=report, many=True)
+        return Response(data={'data': serializer.data, 'total': total}, status=status.HTTP_200_OK)
+
 
