@@ -60,8 +60,6 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = '1234'
 
-django_heroku.settings(locals())
-
 
 # Application definition
 
@@ -92,6 +90,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+django_heroku.settings(locals())
 
 ROOT_URLCONF = 'MonitEase.urls'
 
