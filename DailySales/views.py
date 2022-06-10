@@ -45,6 +45,8 @@ class DailySalesListView(generics.GenericAPIView):
     name = 'Daily Sales List'
     filter_backends = (DjangoFilterBackend,)
 
+    
+
     # filterset_fields = ('customername','havepaid', 'datesold', 'itemsold', 'datepaid')
 
     filterset_fields = {
@@ -153,9 +155,18 @@ class SalesFilteredReportView(generics.GenericAPIView):
         sales = self.filter_queryset(self.get_queryset())
         # sales = DailySales.objects.filter(datesold=datetime.datetime.now())
         total = sales.aggregate(Sum('totalprice'))['totalprice__sum']
+        have_paid_total = sales.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
+        if total == None:
+            total = 0
+
+        if have_paid_total == None:
+            have_paid_total = 0
+            
+        unpaid_total = total - have_paid_total
+        print(total, have_paid_total)
         print(total)
-        serializer = self.serializer_class(instance=sales, many=True)
-        return Response(data={'data': serializer.data, 'total': total}, status=status.HTTP_200_OK)
+        serializer = self.serializer_class(instance=report, many=True)
+        return Response(data={'data': serializer.data, 'total': total, 'paid_total': have_paid_total, 'credit_amount': unpaid_total}, status=status.HTTP_200_OK)
 
 
 class SalesReportView(generics.GenericAPIView):
@@ -166,9 +177,17 @@ class SalesReportView(generics.GenericAPIView):
     def get(self, reques):
         sales = DailySales.objects.filter(datesold=datetime.datetime.today())
         total = DailySales.objects.filter(datesold=datetime.datetime.today()).aggregate(Sum('totalprice'))['totalprice__sum']
-        print(total)
+        have_paid_total = sales.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
+        if total == None:
+            total = 0
+
+        if have_paid_total == None:
+            have_paid_total = 0
+
+        unpaid_total = total - have_paid_total
+        print(total, have_paid_total)
         serializer = self.serializer_class(instance=sales, many=True)
-        return Response(data={'data': serializer.data, 'total': total}, status=status.HTTP_200_OK)
+        return Response(data={'data': serializer.data, 'total': total, 'paid_total': have_paid_total, 'credit_amount': unpaid_total}, status=status.HTTP_200_OK)
 
     def report_pdf(self, request):
 
@@ -210,9 +229,18 @@ class MonthlyReportView(generics.GenericAPIView):
         last_30days = datetime.datetime.today() - datetime.timedelta(30)
         report = DailySales.objects.filter(datesold__gte=last_30days)
         total = report.aggregate(Sum('totalprice'))['totalprice__sum']
+        have_paid_total = report.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
+        if total == None:
+            total = 0
+
+        if have_paid_total == None:
+            have_paid_total = 0
+            
+        unpaid_total = total - have_paid_total
+        print(total, have_paid_total)
         print(total)
         serializer = self.serializer_class(instance=report, many=True)
-        return Response(data={'data': serializer.data, 'total': total}, status=status.HTTP_200_OK)
+        return Response(data={'data': serializer.data, 'total': total, 'paid_total': have_paid_total, 'credit_amount': unpaid_total}, status=status.HTTP_200_OK)
 
 
 class WeeklyReportView(generics.GenericAPIView):
@@ -225,8 +253,16 @@ class WeeklyReportView(generics.GenericAPIView):
         last_7days = datetime.datetime.today() - datetime.timedelta(7)
         report = DailySales.objects.filter(datesold__gte=last_7days)
         total = report.aggregate(Sum('totalprice'))['totalprice__sum']
-        print(total)
+        have_paid_total = report.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
+        if total == None:
+            total = 0
+
+        if have_paid_total == None:
+            have_paid_total = 0
+            
+        unpaid_total = total - have_paid_total
+        print(total, have_paid_total)
         serializer = self.serializer_class(instance=report, many=True)
-        return Response(data={'data': serializer.data, 'total': total}, status=status.HTTP_200_OK)
+        return Response(data={'data': serializer.data, 'total': total, 'paid_total': have_paid_total, 'credit_amount': unpaid_total}, status=status.HTTP_200_OK)
 
 

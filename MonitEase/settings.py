@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
-
+import os
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,6 +27,37 @@ SECRET_KEY = 'django-insecure-k_8*^7a2+z$nwcdpw0*i5hi2$l1*qs*g0fm0_8sqbx15pxsvxr
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
+# Customized
+
+AUTH_USER_MODEL = 'AuthArea.UserModel'
+
+REST_FRSMEWORK = {
+    'NON_FIELD_ERRORS_KEY': 'errors',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'AuthArea.backend_auth.py.JWRAuthentication'
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
+
+JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+
+# SIMPLE_JWT = {
+#     'AUTH_HEADER_TYPES': ('Bearer',),
+#     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+#     'REFRESHE_TOKEN_LIFETIME': timedelta(days=1),
+#     'BLACKLIST_AFTER_ROTATION': False,
+# }
+
+# Sending Email setup
+
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = '1234'
 
 
 # Application definition
@@ -44,7 +76,8 @@ INSTALLED_APPS = [
 
     # Third Parties
     'rest_framework',
-    'django_filters'
+    'django_filters',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
