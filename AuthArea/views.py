@@ -12,7 +12,7 @@ from django.conf import settings
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.conf import settings
-from django.contrib.auth import authenticate
+from django.contrib import auth
 
 # Create your views here.
 
@@ -81,17 +81,16 @@ class LoginUserView(generics.GenericAPIView):
 
         print({'email': email, 'password': password})
 
-        user = authenticate(email=email, password=password)
+        user = auth.authenticate(username=email, password=password)
         print(user)
         if user:
 
-            serializer = RegisterSerializer(user)
+            auth_token = jwt.encode(
+                    {'email': user.username},
+                    settings.JWT_SECRET_KEY 
+                )
 
-            auth_token = jwt.encode({
-                serializer.data
-                },
-                settings.JWT_SECRET_KEY
-            )
+            serializer = RegisterSerializer(user)
 
             print(user)
 
@@ -101,6 +100,6 @@ class LoginUserView(generics.GenericAPIView):
             }
             return Response(data=data, status=status.HTTP_200_OK)
         print('None')
-        return Response({'error': 'Invalid Credentials'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 

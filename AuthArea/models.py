@@ -44,7 +44,7 @@ class UserModel(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=70, unique=True, db_index=True)
     first_name = models.CharField(max_length=70)
     last_name = models.CharField(max_length=70)
-    phone_number = models.IntegerField(null=False, unique=True)
+    phone_number = models.CharField(max_length=15, null=False, unique=True)
     email = models.EmailField(unique=True)
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)

@@ -1,12 +1,16 @@
 import datetime
 from django.shortcuts import get_object_or_404
 from MonitEase.pagination import CustomPageNumberPagination
+from django.db.models import Sum
+
 from rest_framework import generics, status
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+
 from .serializers import DailySalesSerializer, ProductsSerializer, UpdateDatePaidSerializer
 from .models import DailySales, Products
-from django.db.models import Sum
 
 # Imports for pdf generating
 from django.http import FileResponse
