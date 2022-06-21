@@ -35,6 +35,7 @@ REST_FRSMEWORK = {
 }
 
 JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+print(JWT_SECRET_KEY)
 
 # SIMPLE_JWT = {
 #     'AUTH_HEADER_TYPES': ('Bearer',),
