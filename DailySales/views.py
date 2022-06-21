@@ -23,6 +23,7 @@ from reportlab.lib.pagesizes import letter
 
 class ProductsView(generics.GenericAPIView):
     serializer_class = ProductsSerializer
+    permission_classes = [IsAuthenticated]
     name = "Stock Items"
     queryset = Products.objects.all()
 
@@ -48,10 +49,7 @@ class DailySalesListView(generics.GenericAPIView):
     queryset = DailySales.objects.all()
     name = 'Daily Sales List'
     filter_backends = (DjangoFilterBackend,)
-
-    
-
-    # filterset_fields = ('customername','havepaid', 'datesold', 'itemsold', 'datepaid')
+    permission_classes = [IsAuthenticated]
 
     filterset_fields = {
         'datesold': ['gte', 'lte', 'exact'],
@@ -93,6 +91,7 @@ class DailySalesListView(generics.GenericAPIView):
 
 class UpdateHavePaid(generics.GenericAPIView):
     serializer_class = UpdateDatePaidSerializer
+    permission_classes = [IsAuthenticated]
     name = 'Update Have Paid'
     
     def put(self, request, sales_id):
@@ -114,6 +113,7 @@ class UpdateHavePaid(generics.GenericAPIView):
 
 class DailySalesDetailView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
+    permission_classes = [IsAuthenticated]
     name = 'Get by Id and Delete Daily Sales'
 
     def get(self, request, sales_id):
@@ -146,6 +146,7 @@ class DailySalesDetailView(generics.GenericAPIView):
 
 class SalesFilteredReportView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
+    permission_classes = [IsAuthenticated]
     name = 'Filterable Report'
     queryset = DailySales.objects.all()
 
@@ -175,6 +176,7 @@ class SalesFilteredReportView(generics.GenericAPIView):
 
 class SalesReportView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
+    permission_classes = [IsAuthenticated]
     name = 'Report'
     queryset = DailySales.objects.all()
 
@@ -225,6 +227,7 @@ class SalesReportView(generics.GenericAPIView):
 
 class MonthlyReportView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
+    permission_classes = [IsAuthenticated]
     name = 'Monthly Report'
     queryset = DailySales.objects.all()
 
@@ -249,6 +252,7 @@ class MonthlyReportView(generics.GenericAPIView):
 
 class WeeklyReportView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
+    permission_classes = [IsAuthenticated]
     name = 'Weekly Report'
     queryset = DailySales.objects.all()
 
