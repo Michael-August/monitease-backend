@@ -1,4 +1,5 @@
 from django.db import models
+from Products.models import Products
 
 # Create your models here.
 
@@ -6,13 +7,6 @@ PAYMENT_METHOD = (
     ('CASH', 'cash'),
     ('TRANSFER', 'transfer'),
 )
-
-class Products(models.Model):
-    item_name = models.CharField(max_length=80)
-    quantity = models.IntegerField()
-
-    def __str__(self):
-        return self.item_name
 
 
 class DailySales(models.Model):
@@ -28,6 +22,7 @@ class DailySales(models.Model):
 
     class Meta:
         verbose_name_plural = 'Daily Sales'
+
 
     def __str__(self):
         return self.customername

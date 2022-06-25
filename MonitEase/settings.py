@@ -13,10 +13,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-k_8*^7a2+z$nwcdpw0*i5hi2$l1*qs*g0fm0_8sqbx15pxsvxr'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['monitease.herokuapp.com', 'localhost']
 
@@ -27,7 +27,7 @@ AUTH_USER_MODEL = 'AuthArea.UserModel'
 REST_FRSMEWORK = {
     'NON_FIELD_ERRORS_KEY': 'errors',
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'AuthArea.backend_auth.JWTAuthentication',
+        'AuthArea.backends_auth.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -35,7 +35,6 @@ REST_FRSMEWORK = {
 }
 
 JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
-print(JWT_SECRET_KEY)
 
 # SIMPLE_JWT = {
 #     'AUTH_HEADER_TYPES': ('Bearer',),
@@ -66,6 +65,7 @@ INSTALLED_APPS = [
     'DailySales.apps.DailysalesConfig',
     'CollectedItems.apps.CollecteditemsConfig',
     'AuthArea.apps.AuthareaConfig',
+    'Products.apps.ProductsConfig',
 
     # Third Parties
     'rest_framework',

@@ -42,6 +42,7 @@ urlpatterns = [
     path('DailySales/', include('DailySales.urls')),
     path('CollectedItems/', include('CollectedItems.urls')),
     path('Authentication/', include('AuthArea.urls')),
+    path('Products/', include('Products.urls')),
 
     # path('api-auth', include('rest_framework.urls')),
 

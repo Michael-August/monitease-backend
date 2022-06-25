@@ -1,16 +1,20 @@
 import datetime
+from os import abort
 from django.shortcuts import get_object_or_404
 from MonitEase.pagination import CustomPageNumberPagination
 from django.db.models import Sum
 
 from rest_framework import generics, status
-from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .serializers import DailySalesSerializer, ProductsSerializer, UpdateDatePaidSerializer
-from .models import DailySales, Products
+from AuthArea.backends_auth import JWTAuthentication
+
+from .serializers import (  DailySalesSerializer, 
+                            UpdateDatePaidSerializer )
+from .models import DailySales
+from Products.models import Products
 
 # Imports for pdf generating
 from django.http import FileResponse
@@ -20,28 +24,7 @@ from reportlab.lib.units import inch
 from reportlab.lib.pagesizes import letter
 
 # Create your views here.
-
-class ProductsView(generics.GenericAPIView):
-    serializer_class = ProductsSerializer
-    permission_classes = [IsAuthenticated]
-    name = "Stock Items"
-    queryset = Products.objects.all()
-
-    def get(self, request):
-        items = Products.objects.all()
-        serializer = self.serializer_class(instance=items, many=True)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
-
-    def post(self, request):
-        data = request.data
-        serializer = self.serializer_class(data=data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
-
-        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+            
 
 class DailySalesListView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
@@ -50,6 +33,7 @@ class DailySalesListView(generics.GenericAPIView):
     name = 'Daily Sales List'
     filter_backends = (DjangoFilterBackend,)
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     filterset_fields = {
         'datesold': ['gte', 'lte', 'exact'],
@@ -70,50 +54,94 @@ class DailySalesListView(generics.GenericAPIView):
             return self.get_paginated_response(serializer.data)
 
         serializer = self.serializer_class(instance=sales, many=True)
+        
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        data = request.data
-        serializer = self.serializer_class(data=data)
+        try:
+            if request.user.role != 'SECRATARY':
+                response = {
+                    'success': False,
+                    'status_code': status.HTTP_403_FORBIDDEN,
+                    'message': 'You are not authorized to perform this action'
+                }
+                return Response(response, status=status.HTTP_403_FORBIDDEN)
+            else:
+                data = request.data
+                serializer = self.serializer_class(data=data)
 
-        if serializer.is_valid():
-            serializer.save()
+                if serializer.is_valid():
+                    serializer.save()
 
-            item_sold_quantity = serializer.data.get('quantity')
-            item_sold = Products.objects.get(pk=serializer.data.get('itemsold'))
-            item_sold.quantity = item_sold.quantity - item_sold_quantity
-            item_sold.save()
+                    item_sold_quantity = serializer.data.get('quantity')
+                    item_sold = Products.objects.get(pk=serializer.data.get('itemsold'))
+                    item_sold.quantity = item_sold.quantity - item_sold_quantity
+                    item_sold.save()
 
-            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
-
-        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    response = {
+                        'success': True,
+                        'status_code': status.HTTP_201_CREATED,
+                        'message': 'Sale added successfuly',
+                        'data': serializer.data
+                    }
+                    return Response(response, status=status.HTTP_201_CREATED)
+        except:
+            response = {
+                'success': False,
+                'status_code': status.HTTP_400_BAD_REQUEST,
+                'message': 'Check your request and try again'
+            }
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
     
 
 class UpdateHavePaid(generics.GenericAPIView):
     serializer_class = UpdateDatePaidSerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     name = 'Update Have Paid'
     
-    def put(self, request, sales_id):
-        data = request.data
-        sale = DailySales.objects.get(pk=sales_id)
-        
-        sale.havepaid = data.get('havepaid', sale.havepaid)
-        sale.datepaid = data.get('datepaid', sale.datepaid)
+    def patch(self, request, sales_id):
+        try:
+            if request.user.role != 'SECRATARY':
+                response = {
+                    'success': False,
+                    'status_code': status.HTTP_403_FORBIDDEN,
+                    'message': 'You are not authorized to perform this action'
+                }
+                return Response(response, status=status.HTTP_403_FORBIDDEN)
+            else:
+                data = request.data
+                sale = DailySales.objects.get(pk=sales_id)
+                
+                sale.havepaid = data.get('havepaid')
+                sale.paymentmethod = data.get('paymentmethod')
+                sale.datepaid = data.get('datepaid')
 
-        serializer = self.serializer_class(data=data, instance=sale)
-        if serializer.is_valid():
-            serializer.save()
-
-            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
-            
-        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                sale.save()
+                serializer = self.serializer_class(sale)
+                
+                response = {
+                    'success': True,
+                    'status_code': status.HTTP_200_OK,
+                    'message': 'Paid status updated successfully',
+                    'data': serializer.data
+                }
+                
+                return Response(response, status=status.HTTP_200_OK)
+        except:
+            response = {
+                'success': False,
+                'status_code': status.HTTP_400_BAD_REQUEST,
+                'message': 'Check your request and try again'
+            }
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
         
 
 
 class DailySalesDetailView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     name = 'Get by Id and Delete Daily Sales'
 
     def get(self, request, sales_id):
@@ -122,31 +150,63 @@ class DailySalesDetailView(generics.GenericAPIView):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, sales_id):
-        data = request.data
-        sale = get_object_or_404(DailySales, pk=sales_id)
+        try:
+            if request.user.role != 'SECRATARY':
+                response = {
+                    'success': False,
+                    'status_code': status.HTTP_403_FORBIDDEN,
+                    'message': 'You are not authorized to perform this action'
+                }
+                return Response(response, status=status.HTTP_403_FORBIDDEN)
+            else:
+                data = request.data
+                sale = get_object_or_404(DailySales, pk=sales_id)
 
-        serializer = self.serializer_class(data=data, instance=sale)
-        if serializer.is_valid():
-            serializer.save()
-            
-            item_sold_quantity = serializer.data.get('quantity')
-            item_sold = Products.objects.get(pk=serializer.data.get('itemsold'))
-            item_sold.quantity = item_sold.quantity - item_sold_quantity
-            item_sold.save()
+                serializer = self.serializer_class(data=data, instance=sale)
+                if serializer.is_valid():
+                    serializer.save()
+                    
+                    item_sold_quantity = serializer.data.get('quantity')
+                    item_sold = Products.objects.get(pk=serializer.data.get('itemsold'))
+                    item_sold.quantity = item_sold.quantity - item_sold_quantity
+                    item_sold.save()
 
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
-
-        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(data=serializer.data, status=status.HTTP_200_OK)
+        except:
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, sales_id):
-        sale = get_object_or_404(DailySales, pk=sales_id)
-        sale.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            if request.user.role != 'SECRATARY':
+                response = {
+                    'success': False,
+                    'status_code': status.HTTP_403_FORBIDDEN,
+                    'message': 'You are not authorized to perform this action'
+                }
+                return Response(response, status=status.HTTP_403_FORBIDDEN)
+            else:
+                sale = get_object_or_404(DailySales, pk=sales_id)
+
+                sale.delete()
+                response = {
+                    'success': True,
+                    'status_code': status.HTTP_204_NO_CONTENT,
+                    'message': 'Product deleted successfully'
+                }
+                return Response(response, status=status.HTTP_204_NO_CONTENT)
+        except:
+            response = {
+                'success': False,
+                'status_code': status.HTTP_400_BAD_REQUEST,
+                'message': 'Check your request and try again'
+            }
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SalesFilteredReportView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     name = 'Filterable Report'
     queryset = DailySales.objects.all()
 
@@ -157,43 +217,76 @@ class SalesFilteredReportView(generics.GenericAPIView):
     }
 
     def get(self, request):
-        sales = self.filter_queryset(self.get_queryset())
-        # sales = DailySales.objects.filter(datesold=datetime.datetime.now())
-        total = sales.aggregate(Sum('totalprice'))['totalprice__sum']
-        have_paid_total = sales.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
-        if total == None:
-            total = 0
+        if request.user.role == 'OTHERS':
+            response = {
+                    'success': False,
+                    'status_code': status.HTTP_403_FORBIDDEN,
+                    'message': 'You are not authorized to perform this action'
+                }
+            return Response(response, status=status.HTTP_403_FORBIDDEN)
+        else:
+            sales = self.filter_queryset(self.get_queryset())
+            # sales = DailySales.objects.filter(datesold=datetime.datetime.now())
+            total = sales.aggregate(Sum('totalprice'))['totalprice__sum']
+            have_paid_total = sales.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
+            transfer_total = sales.filter(havepaid=True).filter(paymentmethod='transfer').aggregate(Sum('totalprice'))['totalprice__sum']
+            cash_total = sales.filter(havepaid=True).filter(paymentmethod='cash').aggregate(Sum('totalprice'))['totalprice__sum']
 
-        if have_paid_total == None:
-            have_paid_total = 0
-            
-        unpaid_total = total - have_paid_total
-        print(total, have_paid_total)
-        print(total)
-        serializer = self.serializer_class(instance=report, many=True)
-        return Response(data={'data': serializer.data, 'total': total, 'paid_total': have_paid_total, 'credit_amount': unpaid_total}, status=status.HTTP_200_OK)
+            if total == None:
+                total = 0
+
+            if have_paid_total == None:
+                have_paid_total = 0
+
+            if transfer_total == None:
+                transfer_total = 0
+
+            if cash_total == None:
+                cash_total = 0
+                
+            unpaid_total = total - have_paid_total
+            serializer = self.serializer_class(instance=sales, many=True)
+            return Response(data={'data': serializer.data, 'total': total, 'paid_total': have_paid_total, 'credit_amount': unpaid_total, 'total_transfer': transfer_total, 'total_cash': cash_total}, status=status.HTTP_200_OK)
 
 
 class SalesReportView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     name = 'Report'
     queryset = DailySales.objects.all()
 
-    def get(self, reques):
-        sales = DailySales.objects.filter(datesold=datetime.datetime.today())
-        total = DailySales.objects.filter(datesold=datetime.datetime.today()).aggregate(Sum('totalprice'))['totalprice__sum']
-        have_paid_total = sales.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
-        if total == None:
-            total = 0
+    def get(self, request):
+        if request.user.role == 'OTHERS':
+            response = {
+                    'success': False,
+                    'status_code': status.HTTP_403_FORBIDDEN,
+                    'message': 'You are not authorized to perform this action'
+                }
+            return Response(response, status=status.HTTP_403_FORBIDDEN)
+        else:
+            sales = DailySales.objects.filter(datesold=datetime.datetime.today())
+            total = DailySales.objects.filter(datesold=datetime.datetime.today()).aggregate(Sum('totalprice'))['totalprice__sum']
+            have_paid_total = sales.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
+            transfer_total = sales.filter(havepaid=True).filter(paymentmethod='transfer').aggregate(Sum('totalprice'))['totalprice__sum']
+            cash_total = sales.filter(havepaid=True).filter(paymentmethod='cash').aggregate(Sum('totalprice'))['totalprice__sum']
 
-        if have_paid_total == None:
-            have_paid_total = 0
+            if total == None:
+                total = 0
 
-        unpaid_total = total - have_paid_total
-        print(total, have_paid_total)
-        serializer = self.serializer_class(instance=sales, many=True)
-        return Response(data={'data': serializer.data, 'total': total, 'paid_total': have_paid_total, 'credit_amount': unpaid_total}, status=status.HTTP_200_OK)
+            if have_paid_total == None:
+                have_paid_total = 0
+
+            if transfer_total == None:
+                transfer_total = 0
+
+            if cash_total == None:
+                cash_total = 0
+
+            unpaid_total = total - have_paid_total
+            print(total, have_paid_total)
+            serializer = self.serializer_class(instance=sales, many=True)
+            return Response(data={'data': serializer.data, 'total': total, 'paid_total': have_paid_total, 'credit_amount': unpaid_total, 'total_transfer': transfer_total, 'total_cash': cash_total}, status=status.HTTP_200_OK)
 
     def report_pdf(self, request):
 
@@ -228,49 +321,82 @@ class SalesReportView(generics.GenericAPIView):
 class MonthlyReportView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     name = 'Monthly Report'
     queryset = DailySales.objects.all()
 
 
     def get(self,request):
-        last_30days = datetime.datetime.today() - datetime.timedelta(30)
-        report = DailySales.objects.filter(datesold__gte=last_30days)
-        total = report.aggregate(Sum('totalprice'))['totalprice__sum']
-        have_paid_total = report.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
-        if total == None:
-            total = 0
+        if request.user.role == 'OTHERS':
+            response = {
+                    'success': False,
+                    'status_code': status.HTTP_403_FORBIDDEN,
+                    'message': 'You are not authorized to perform this action'
+                }
+            return Response(response, status=status.HTTP_403_FORBIDDEN)
+        else:
+            last_30days = datetime.datetime.today() - datetime.timedelta(30)
+            report = DailySales.objects.filter(datesold__gte=last_30days)
+            total = report.aggregate(Sum('totalprice'))['totalprice__sum']
+            have_paid_total = report.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
+            transfer_total = report.filter(havepaid=True).filter(paymentmethod='transfer').aggregate(Sum('totalprice'))['totalprice__sum']
+            cash_total = report.filter(havepaid=True).filter(paymentmethod='cash').aggregate(Sum('totalprice'))['totalprice__sum']
 
-        if have_paid_total == None:
-            have_paid_total = 0
-            
-        unpaid_total = total - have_paid_total
-        print(total, have_paid_total)
-        print(total)
-        serializer = self.serializer_class(instance=report, many=True)
-        return Response(data={'data': serializer.data, 'total': total, 'paid_total': have_paid_total, 'credit_amount': unpaid_total}, status=status.HTTP_200_OK)
+            if total == None:
+                total = 0
+
+            if have_paid_total == None:
+                have_paid_total = 0
+
+            if transfer_total == None:
+                transfer_total = 0
+
+            if cash_total == None:
+                cash_total = 0
+                
+            unpaid_total = total - have_paid_total
+            serializer = self.serializer_class(instance=report, many=True)
+            return Response(data={'data': serializer.data, 'total': total, 'paid_total': have_paid_total, 'credit_amount': unpaid_total, 'total_transfer': transfer_total, 'total_cash': cash_total}, status=status.HTTP_200_OK)
 
 
 class WeeklyReportView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     name = 'Weekly Report'
     queryset = DailySales.objects.all()
 
 
     def get(self,request):
-        last_7days = datetime.datetime.today() - datetime.timedelta(7)
-        report = DailySales.objects.filter(datesold__gte=last_7days)
-        total = report.aggregate(Sum('totalprice'))['totalprice__sum']
-        have_paid_total = report.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
-        if total == None:
-            total = 0
+        if request.user.role == 'OTHERS':
+            response = {
+                    'success': False,
+                    'status_code': status.HTTP_403_FORBIDDEN,
+                    'message': 'You are not authorized to perform this action'
+                }
+            return Response(response, status=status.HTTP_403_FORBIDDEN)
+        else:
+            last_7days = datetime.datetime.today() - datetime.timedelta(7)
+            report = DailySales.objects.filter(datesold__gte=last_7days)
+            total = report.aggregate(Sum('totalprice'))['totalprice__sum']
+            have_paid_total = report.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
+            transfer_total = report.filter(havepaid=True).filter(paymentmethod='transfer').aggregate(Sum('totalprice'))['totalprice__sum']
+            cash_total = report.filter(havepaid=True).filter(paymentmethod='cash').aggregate(Sum('totalprice'))['totalprice__sum']
 
-        if have_paid_total == None:
-            have_paid_total = 0
-            
-        unpaid_total = total - have_paid_total
-        print(total, have_paid_total)
-        serializer = self.serializer_class(instance=report, many=True)
-        return Response(data={'data': serializer.data, 'total': total, 'paid_total': have_paid_total, 'credit_amount': unpaid_total}, status=status.HTTP_200_OK)
+            if total == None:
+                total = 0
+
+            if have_paid_total == None:
+                have_paid_total = 0
+
+            if transfer_total == None:
+                transfer_total = 0
+
+            if cash_total == None:
+                cash_total = 0
+                
+            unpaid_total = total - have_paid_total
+            serializer = self.serializer_class(instance=report, many=True)
+            return Response(data={'data': serializer.data, 'total': total, 'paid_total': have_paid_total, 'credit_amount': unpaid_total, 'total_transfer': transfer_total, 'total_cash': cash_total}, status=status.HTTP_200_OK)
 
 

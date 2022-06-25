@@ -70,3 +70,22 @@ python manage.py runserver
 ```
 
 ### API endpoints documentation
+
+
+### Auth details
+
+email: superuser@gmail.com
+password: superuser100
+role: admin
+
+email: admin@gmail.com
+password: admin100
+role: secratary
+
+email: otheruser@gmail.com
+password: 0ther100@user
+role: other
+
+email: directoruser@gmail.com
+password: directoruser100
+role: director

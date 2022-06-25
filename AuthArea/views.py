@@ -79,27 +79,24 @@ class LoginUserView(generics.GenericAPIView):
         email = user_data.get('email', '')
         password = user_data.get('password', '')
 
-        print({'email': email, 'password': password})
-
         user = auth.authenticate(username=email, password=password)
-        print(user)
         if user:
 
             auth_token = jwt.encode(
-                    {'email': user.username},
+                    {'email': user.email, 'role': user.role},
                     settings.JWT_SECRET_KEY 
                 )
 
             serializer = RegisterSerializer(user)
 
-            print(user)
 
             data = {
+                'success': True,
+                'message': 'User is logged in successfully',
                 'user': serializer.data,
                 'token': auth_token
             }
-            return Response(data=data, status=status.HTTP_200_OK)
-        print('None')
+            return Response(data, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
