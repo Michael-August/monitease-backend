@@ -18,7 +18,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['monitease.herokuapp.com', 'http://localhost:4200']
+ALLOWED_HOSTS = []
 
 # Customized
 
@@ -35,6 +35,12 @@ REST_FRSMEWORK = {
 }
 
 JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+
+# CORS 
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200",
+]
 
 # SIMPLE_JWT = {
 #     'AUTH_HEADER_TYPES': ('Bearer',),
@@ -71,11 +77,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'drf_yasg',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
