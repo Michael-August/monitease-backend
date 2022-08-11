@@ -1,3 +1,4 @@
+from random import Random
 from django.shortcuts import render
 from AuthArea.models import UserModel
 from rest_framework import generics, status
@@ -82,8 +83,10 @@ class LoginUserView(generics.GenericAPIView):
         user = auth.authenticate(username=email, password=password)
         if user:
 
+            random_number = Random.randint(0, 10000)
+
             auth_token = jwt.encode(
-                    {'email': user.email, 'role': user.role},
+                    {'email': user.email, 'role': user.role, 'sec_num': random_number},
                     settings.JWT_SECRET_KEY 
                 )
 
