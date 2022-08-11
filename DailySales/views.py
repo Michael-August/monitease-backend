@@ -59,7 +59,7 @@ class DailySalesListView(generics.GenericAPIView):
 
     def post(self, request):
         try:
-            if request.user.role != 'SECRATARY':
+            if request.user.role != 'SECRATARY' and 'ADMIN':
                 response = {
                     'success': False,
                     'status_code': status.HTTP_403_FORBIDDEN,
@@ -102,7 +102,7 @@ class UpdateHavePaid(generics.GenericAPIView):
     
     def patch(self, request, sales_id):
         try:
-            if request.user.role != 'SECRATARY':
+            if request.user.role != 'SECRATARY' and 'ADMIN':
                 response = {
                     'success': False,
                     'status_code': status.HTTP_403_FORBIDDEN,
@@ -151,7 +151,7 @@ class DailySalesDetailView(generics.GenericAPIView):
 
     def put(self, request, sales_id):
         try:
-            if request.user.role != 'SECRATARY':
+            if request.user.role != 'SECRATARY' and 'ADMIN':
                 response = {
                     'success': False,
                     'status_code': status.HTTP_403_FORBIDDEN,
@@ -177,7 +177,7 @@ class DailySalesDetailView(generics.GenericAPIView):
 
     def delete(self, request, sales_id):
         try:
-            if request.user.role != 'SECRATARY':
+            if request.user.role != 'SECRATARY' and 'ADMIN':
                 response = {
                     'success': False,
                     'status_code': status.HTTP_403_FORBIDDEN,
