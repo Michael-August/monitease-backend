@@ -73,7 +73,7 @@ class ProductsDetailView(generics.GenericAPIView):
 
     def put(self, request, product_id):
         try:
-            if request.user.role != 'DIRECTOR':
+            if request.user.role != 'DIRECTOR' and 'ADMIN':
                 response = {
                     'success': False,
                     'status_code': status.HTTP_403_FORBIDDEN,
@@ -82,9 +82,9 @@ class ProductsDetailView(generics.GenericAPIView):
                 return Response(response, status=status.HTTP_403_FORBIDDEN)
             else:
                 data = request.data
-                sale = get_object_or_404(Products, pk=product_id)
+                product = get_object_or_404(Products, pk=product_id)
 
-                serializer = self.serializer_class(data=data, instance=sale)
+                serializer = self.serializer_class(data=data, instance=product)
                 if serializer.is_valid():
                     serializer.save()
 
@@ -106,7 +106,7 @@ class ProductsDetailView(generics.GenericAPIView):
 
     def delete(self, request, product_id):
         try:
-            if request.user.role != 'DIRECTOR':
+            if request.user.role != 'DIRECTOR' and 'ADMIN':
                 response = {
                     'success': False,
                     'status_code': status.HTTP_403_FORBIDDEN,
@@ -114,9 +114,9 @@ class ProductsDetailView(generics.GenericAPIView):
                 }
                 return Response(response, status=status.HTTP_403_FORBIDDEN)
             else:
-                sale = get_object_or_404(Products, pk=product_id)
+                product = get_object_or_404(Products, pk=product_id)
 
-                sale.delete()
+                product.delete()
                 response = {
                     'success': True,
                     'status_code': status.HTTP_204_NO_CONTENT,
@@ -140,7 +140,7 @@ class UpdateProductQuantity(generics.GenericAPIView):
     
     def patch(self, request, product_id):
         try:
-            if request.user.role != 'DIRECTOR':
+            if request.user.role != 'DIRECTOR' and 'ADMIN':
                 response = {
                     'success': False,
                     'status_code': status.HTTP_403_FORBIDDEN,
