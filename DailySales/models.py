@@ -9,7 +9,7 @@ PAYMENT_METHOD = (
 )
 
 
-class DailySales(models.Model):
+class DailySales(models.Model):   
     customername = models.CharField(max_length=100)
     itemsold = models.ForeignKey(Products, related_name="soldItem", on_delete=models.CASCADE)
     quantity = models.IntegerField()

@@ -35,6 +35,7 @@ class ProductsView(generics.GenericAPIView):
                 return Response(response, status=status.HTTP_403_FORBIDDEN)
             else:
                 data = request.data
+                product_exist = Products.objects.filter(item_name = data.get('item_name')).count()
                 serializer = self.serializer_class(data=data)
 
                 if serializer.is_valid():
@@ -73,7 +74,7 @@ class ProductsDetailView(generics.GenericAPIView):
 
     def put(self, request, product_id):
         try:
-            if request.user.role != 'DIRECTOR' and 'ADMIN':
+            if request.user.role != 'DIRECTOR' and request.user.role != 'ADMIN':
                 response = {
                     'success': False,
                     'status_code': status.HTTP_403_FORBIDDEN,
@@ -106,7 +107,7 @@ class ProductsDetailView(generics.GenericAPIView):
 
     def delete(self, request, product_id):
         try:
-            if request.user.role != 'DIRECTOR' and 'ADMIN':
+            if request.user.role != 'DIRECTOR' and request.user.role != 'ADMIN':
                 response = {
                     'success': False,
                     'status_code': status.HTTP_403_FORBIDDEN,
@@ -140,7 +141,7 @@ class UpdateProductQuantity(generics.GenericAPIView):
     
     def patch(self, request, product_id):
         try:
-            if request.user.role != 'DIRECTOR' and 'ADMIN':
+            if request.user.role != 'DIRECTOR' and request.user.role != 'ADMIN':
                 response = {
                     'success': False,
                     'status_code': status.HTTP_403_FORBIDDEN,

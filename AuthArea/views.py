@@ -1,4 +1,5 @@
-from random import Random
+from datetime import datetime, timedelta
+import random
 from django.shortcuts import render
 from AuthArea.models import UserModel
 from rest_framework import generics, status
@@ -23,6 +24,7 @@ class RegisterUserView(generics.GenericAPIView):
 
     def post(self, request):
         user_input_data = request.data
+        print(user_input_data.get('role'))
         serializer = self.serializer_class(data=user_input_data)
         
         if serializer.is_valid():
@@ -83,14 +85,16 @@ class LoginUserView(generics.GenericAPIView):
         user = auth.authenticate(username=email, password=password)
         if user:
 
-            random_number = Random.randint(0, 10000)
+            # random_number = Random.randint(self, a=1, b=10000)
+            # print(random_number)
 
             auth_token = jwt.encode(
-                    {'email': user.email, 'role': user.role, 'sec_num': random_number},
+                    {"exp": datetime.now() + timedelta(days=1), 'email': user.email, 'role': user.role, 'random': random.randint(0, 1000)},
                     settings.JWT_SECRET_KEY 
                 )
 
             serializer = RegisterSerializer(user)
+            user.last_login = datetime.now()
 
 
             data = {
