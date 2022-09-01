@@ -18,7 +18,8 @@ class DailySales(models.Model):
     datesold = models.DateField(auto_now_add=True, auto_now=False)
     paymentmethod = models.CharField(max_length=40, choices=PAYMENT_METHOD, default=PAYMENT_METHOD[0][0])
     havepaid = models.BooleanField(default=False)
-    datepaid = models.DateField(auto_now_add=False, auto_now=True)
+    datepaid = models.DateField(null=True)
+    dateupdated = models.DateField(auto_now=True)
 
     class Meta:
         verbose_name_plural = 'Daily Sales'

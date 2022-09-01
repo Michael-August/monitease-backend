@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
 import random
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
+from AuthArea.backends_auth import JWTAuthentication
 from AuthArea.models import UserModel
 from rest_framework import generics, status
 from rest_framework.response import Response
-from .serializers import LoginUserSerializer, RegisterSerializer
+from rest_framework.permissions import IsAuthenticated
+from .serializers import EditUserSerializer, LoginUserSerializer, RegisterSerializer, ResetPasswordSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import Utils
 from django.contrib.sites.shortcuts import get_current_site
@@ -20,7 +22,10 @@ from django.contrib import auth
 
 class RegisterUserView(generics.GenericAPIView):
     serializer_class = RegisterSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     name = 'Register User'
+    queryset = UserModel.objects.all()
 
     def post(self, request):
         user_input_data = request.data
@@ -48,6 +53,103 @@ class RegisterUserView(generics.GenericAPIView):
         # Utils.sendEmail(data)
 
         # return Response(data=user_data, status=status.HTTP_201_CREATED)
+
+    def get(self, request):
+        users = UserModel.objects.all()
+
+        serializer = self.serializer_class(instance=users, many=True)
+
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+class UserDetailView(generics.GenericAPIView):
+    serializer_class = EditUserSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def get(self, request, user_id):
+        user = get_object_or_404(UserModel, pk=user_id)
+        serializer = self.serializer_class(instance=user)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, user_id):
+        try:
+            data = request.data
+            user = get_object_or_404(UserModel, pk=user_id)
+
+            serializer = self.serializer_class(data=data, instance=user)
+
+            if serializer.is_valid():
+                serializer.save()
+
+            userSerializer = RegisterSerializer(user)
+
+            return Response(data=userSerializer.data, status=status.HTTP_200_OK)
+        except:
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, user_id):
+        try:
+            if request.user.role != 'DIRECTOR' and request.user.role != 'ADMIN':
+                response = {
+                    'success': False,
+                    'status_code': status.HTTP_403_FORBIDDEN,
+                    'message': 'You are not authorized to perform this action'
+                }
+                return Response(data=response, status=status.HTTP_403_FORBIDDEN)
+
+            user = get_object_or_404(UserModel, pk=user_id)
+
+            user.delete()
+            response = {
+                'success': True,
+                'status_code': status.HTTP_204_NO_CONTENT,
+                'message': 'User deleted successfully'
+            }
+            return Response(response, status=status.HTTP_204_NO_CONTENT)
+        except:
+            response = {
+                'success': False,
+                'status_code': status.HTTP_400_BAD_REQUEST,
+                'message': 'Check your request and try again'
+            }
+            return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResetPasswordView(generics.GenericAPIView):
+    serializer_class = ResetPasswordSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def patch(self, request):
+        try:
+            user = UserModel.objects.filter(email=request.user.email)
+
+            if not user:
+                response = {
+                    'success': False,
+                    'status_code': status.HTTP_400_BAD_REQUEST,
+                    'message': 'User not found, check email and try again'
+                }
+                return Response(data=response, status=status.HTTP_200_OK)
+            else:
+                user.password = user.set_password(request.data.get('password'))
+                user.save()
+                response = {
+                        'success': True,
+                        'status_code': status.HTTP_200_OK,
+                        'message': 'Password reseted successfully',
+                    }
+                
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            response = {
+                'success': False,
+                'status_code': status.HTTP_400_BAD_REQUEST,
+                'message': 'Check your request and try again' + str(e)
+            }
+            return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 # class VerifyEmailView(generics.GenericAPIView):
