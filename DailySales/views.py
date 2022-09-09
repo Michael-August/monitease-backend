@@ -31,6 +31,7 @@ class DailySalesListView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
     pagination_class = CustomPageNumberPagination
     queryset = DailySales.objects.all()
+    # queryset = DailySales.objects.raw('SELECT s.id, p.item_name, s.rate, s.customername, s.quantity, s.datesold, s.havepaid, s.datepaid, s.paymentmethod from DailySales_dailysales s join Products_products p on s.itemsold_id=p.id')
     name = 'Daily Sales List'
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
     search_fields = ['customername', 'itemsold__item_name']
