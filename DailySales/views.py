@@ -8,6 +8,7 @@ from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 
 from AuthArea.backends_auth import JWTAuthentication
 
@@ -31,7 +32,8 @@ class DailySalesListView(generics.GenericAPIView):
     pagination_class = CustomPageNumberPagination
     queryset = DailySales.objects.all()
     name = 'Daily Sales List'
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
+    search_fields = ['customername', 'itemsold__item_name']
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
 
@@ -85,11 +87,12 @@ class DailySalesListView(generics.GenericAPIView):
                         'data': serializer.data
                     }
                     return Response(response, status=status.HTTP_201_CREATED)
-        except:
+        except Exception as e:
             response = {
                 'success': False,
                 'status_code': status.HTTP_400_BAD_REQUEST,
-                'message': 'Check your request and try again'
+                'message': 'Check your request and try again',
+                'error': str(e)
             }
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
     
@@ -112,31 +115,36 @@ class UpdateHavePaid(generics.GenericAPIView):
             else:
                 data = request.data
                 sale = DailySales.objects.get(pk=sales_id)
-                
-                sale.havepaid = data.get('havepaid')
-                sale.paymentmethod = data.get('paymentmethod')
-                sale.datepaid = data.get('datepaid')
 
+                # serializer = self.serializer_class(data=data)
+                # if serializer.is_valid():
+                print(data.get('havepaid'))
+                sale.havepaid = data.get('havepaid')
+
+                if data.get('paymentmethod'):
+                    sale.paymentmethod = data.get('paymentmethod')
+                    sale.datepaid = data.get('datepaid')
+
+                sale.paymentmethod = sale.paymentmethod
+                sale.datepaid = sale.datepaid
                 sale.save()
-                serializer = self.serializer_class(sale)
-                
+
                 response = {
                     'success': True,
                     'status_code': status.HTTP_200_OK,
                     'message': 'Paid status updated successfully',
-                    'data': serializer.data
                 }
-                
+            
                 return Response(response, status=status.HTTP_200_OK)
-        except:
+        except Exception as e:
             response = {
                 'success': False,
                 'status_code': status.HTTP_400_BAD_REQUEST,
-                'message': 'Check your request and try again'
+                'message': 'Check your request and try again',
+                'error': str(e)
             }
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
         
-
 
 class DailySalesDetailView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
@@ -158,20 +166,19 @@ class DailySalesDetailView(generics.GenericAPIView):
                     'message': 'You are not authorized to perform this action'
                 }
                 return Response(response, status=status.HTTP_403_FORBIDDEN)
-            else:
-                data = request.data
-                sale = get_object_or_404(DailySales, pk=sales_id)
+            data = request.data
+            sale = get_object_or_404(DailySales, pk=sales_id)
 
-                serializer = self.serializer_class(data=data, instance=sale)
-                if serializer.is_valid():
-                    serializer.save()
-                    
-                    item_sold_quantity = serializer.data.get('quantity')
-                    item_sold = Products.objects.get(pk=serializer.data.get('itemsold'))
-                    item_sold.quantity = item_sold.quantity - item_sold_quantity
-                    item_sold.save()
+            serializer = self.serializer_class(data=data, instance=sale)
+            if serializer.is_valid():
+                serializer.save()
+                
+                # item_sold_quantity = serializer.data.get('quantity')
+                # item_sold = Products.objects.get(pk=serializer.data.get('itemsold'))
+                # item_sold.quantity = item_sold.quantity - item_sold_quantity
+                # item_sold.save()
 
-                return Response(data=serializer.data, status=status.HTTP_200_OK)
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
         except:
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -226,7 +233,6 @@ class SalesFilteredReportView(generics.GenericAPIView):
             return Response(response, status=status.HTTP_403_FORBIDDEN)
         else:
             sales = self.filter_queryset(self.get_queryset())
-            # sales = DailySales.objects.filter(datesold=datetime.datetime.now())
             total = sales.aggregate(Sum('totalprice'))['totalprice__sum']
             have_paid_total = sales.filter(havepaid=True).aggregate(Sum('totalprice'))['totalprice__sum']
             transfer_total = sales.filter(havepaid=True).filter(paymentmethod='transfer').aggregate(Sum('totalprice'))['totalprice__sum']

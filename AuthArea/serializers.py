@@ -44,14 +44,30 @@ class RegisterSerializer(serializers.ModelSerializer):
             first_name = validated_data['first_name'],
             last_name = validated_data['last_name'],
             phone_number = validated_data['phone_number'],
-            role = validated_data['role']
+            role = validated_data['role']            
         )
 
         user.set_password(validated_data['password'])
         user.save()
         return user
 
+class EditUserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(max_length=70)
+    first_name = serializers.CharField(max_length=70)
+    last_name = serializers.CharField(max_length=70)
+    phone_number = serializers.CharField(max_length=15)
+    email = serializers.EmailField()
 
+    class Meta:
+        model = UserModel
+        fields = ['username', 'first_name', 'last_name', 'phone_number', 'email']
+
+class ResetPasswordSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(min_length=8, write_only=True)
+
+    class Meta:
+        model = UserModel
+        fields = ['password']
 
 class EmailVerificationSerializer(serializers.ModelSerializer):
     token = serializers.CharField(max_length=777)

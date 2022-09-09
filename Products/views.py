@@ -7,20 +7,33 @@ from rest_framework.response import Response
 from AuthArea.backends_auth import JWTAuthentication
 from .serializers import (  ProductsSerializer, 
                             UpdateProductQuantitySerializer )
+
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 from .models import Products
 
 # Create your views here.
 
 class ProductsView(generics.GenericAPIView):
     serializer_class = ProductsSerializer
+    queryset = Products.objects.all()
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
+
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
+    search_fields = ['item_name', 'quantity']
+
+    filterset_fields = {
+        'quantity': ['exact'],
+        'item_name': ['exact'],
+        'total_added': ['exact']
+    }
     
     name = "Stock Items"
     queryset = Products.objects.all()
 
     def get(self, request):
-        items = Products.objects.all()
+        items = self.filter_queryset(self.get_queryset())
         serializer = self.serializer_class(instance=items, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -39,21 +52,28 @@ class ProductsView(generics.GenericAPIView):
                 serializer = self.serializer_class(data=data)
 
                 if serializer.is_valid():
+                    if product_exist > 1:
+                        response = {
+                            'success': False,
+                            'message': 'Product already exist'
+                        }
+                        return Response(data=response)
                     serializer.save()
+
                     response = {
                         'success': True,
                         'status_code': status.HTTP_201_CREATED,
                         'message': 'Product added successfuly',
                         'data': serializer.data
                     }
-                    return Response(response, status=status.HTTP_201_CREATED)
-        except:
+                    return Response(data=response, status=status.HTTP_201_CREATED)
+        except Exception as e:
             response = {
                 'success': False,
                 'status_code': status.HTTP_400_BAD_REQUEST,
-                'message': 'Check your request and try again'
+                'message': 'Check your request and try again' + str(e)
             }
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProductsDetailView(generics.GenericAPIView):
@@ -152,6 +172,8 @@ class UpdateProductQuantity(generics.GenericAPIView):
                 data = request.data
                 product = Products.objects.get(pk=product_id)
                 
+                product.total_added = product.total_added + data.get('quantity')
+
                 product.quantity = data.get('quantity') + product.quantity
                 product.datupdated = data.get('dateupdated')
 

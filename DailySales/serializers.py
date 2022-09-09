@@ -1,11 +1,11 @@
 from dataclasses import fields
 from .models import DailySales
-from Products.serializers import ProductsSerializer
+# from Products.serializers import ProductsSerializer
 from rest_framework import serializers
 
 class DailySalesSerializer(serializers.ModelSerializer):
     customername = serializers.CharField(max_length=100)
-    soldItem = ProductsSerializer(read_only=True, many=True)
+    # soldItem = ProductsSerializer(read_only=True, many=True)
     quantity = serializers.IntegerField()
     rate = serializers.IntegerField()
     totalprice = serializers.IntegerField(default=0, read_only=True)
