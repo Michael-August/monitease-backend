@@ -40,6 +40,7 @@ JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
+    "https://monitease.netlify.app"
 ]
 
 # SIMPLE_JWT = {
