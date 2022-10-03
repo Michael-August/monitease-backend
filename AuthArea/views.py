@@ -29,7 +29,6 @@ class RegisterUserView(generics.GenericAPIView):
 
     def post(self, request):
         user_input_data = request.data
-        print(user_input_data.get('role'))
         serializer = self.serializer_class(data=user_input_data)
         
         if serializer.is_valid():
@@ -81,10 +80,9 @@ class UserDetailView(generics.GenericAPIView):
 
             if serializer.is_valid():
                 serializer.save()
+                userSerializer = RegisterSerializer(user)
 
-            userSerializer = RegisterSerializer(user)
-
-            return Response(data=userSerializer.data, status=status.HTTP_200_OK)
+                return Response(data=userSerializer.data, status=status.HTTP_200_OK)
         except:
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

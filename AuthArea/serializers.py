@@ -57,10 +57,11 @@ class EditUserSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(max_length=70)
     phone_number = serializers.CharField(max_length=15)
     email = serializers.EmailField()
+    role = serializers.CharField(max_length=20)
 
     class Meta:
         model = UserModel
-        fields = ['username', 'first_name', 'last_name', 'phone_number', 'email']
+        fields = ['username', 'first_name', 'last_name', 'phone_number', 'email', 'role']
 
 class ResetPasswordSerializer(serializers.ModelSerializer):
     password = serializers.CharField(min_length=8, write_only=True)

@@ -48,16 +48,18 @@ class ProductsView(generics.GenericAPIView):
                 return Response(response, status=status.HTTP_403_FORBIDDEN)
             else:
                 data = request.data
-                product_exist = Products.objects.filter(item_name = data.get('item_name')).count()
+                # product_exist = Products.objects.filter(item_name = data.get('item_name')).count()
                 serializer = self.serializer_class(data=data)
 
                 if serializer.is_valid():
-                    if product_exist > 1:
-                        response = {
-                            'success': False,
-                            'message': 'Product already exist'
-                        }
-                        return Response(data=response)
+                    
+                    # if product_exist > 1:
+                    #     response = {
+                    #         'success': False,
+                    #         'message': 'Product already exist'
+                    #     }
+                    #     return Response(data=response)
+                    
                     serializer.save()
 
                     response = {
@@ -67,13 +69,14 @@ class ProductsView(generics.GenericAPIView):
                         'data': serializer.data
                     }
                     return Response(data=response, status=status.HTTP_201_CREATED)
+                # print("passed")
         except Exception as e:
             response = {
                 'success': False,
                 'status_code': status.HTTP_400_BAD_REQUEST,
                 'message': 'Check your request and try again' + str(e)
             }
-            return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProductsDetailView(generics.GenericAPIView):
@@ -106,22 +109,23 @@ class ProductsDetailView(generics.GenericAPIView):
                 product = get_object_or_404(Products, pk=product_id)
 
                 serializer = self.serializer_class(data=data, instance=product)
+                product.total_added = product.quantity + serializer.data.get('quantity')
                 if serializer.is_valid():
                     serializer.save()
 
-                response = {
-                    'success': True,
-                    'status_code': status.HTTP_200_OK,
-                    'message': 'Product updated successfully',
-                    'data': serializer.data
-                }
-                
-                return Response(response, status=status.HTTP_200_OK)
-        except:
+                    response = {
+                        'success': True,
+                        'status_code': status.HTTP_200_OK,
+                        'message': 'Product updated successfully',
+                        'data': serializer.data
+                    }
+                    
+                    return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
             response = {
                 'success': False,
                 'status_code': status.HTTP_400_BAD_REQUEST,
-                'message': 'Check your request and try again'
+                'message': 'Check your request and try again ' + str(e)
             }
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
