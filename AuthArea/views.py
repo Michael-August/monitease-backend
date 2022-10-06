@@ -22,8 +22,8 @@ from django.contrib import auth
 
 class RegisterUserView(generics.GenericAPIView):
     serializer_class = RegisterSerializer
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
+    # permission_classes = [IsAuthenticated]
+    # authentication_classes = [JWTAuthentication]
     name = 'Register User'
     queryset = UserModel.objects.all()
 
