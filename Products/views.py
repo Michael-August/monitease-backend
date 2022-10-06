@@ -48,17 +48,17 @@ class ProductsView(generics.GenericAPIView):
                 return Response(response, status=status.HTTP_403_FORBIDDEN)
             else:
                 data = request.data
-                # product_exist = Products.objects.filter(item_name = data.get('item_name')).count()
+                product_exist = Products.objects.filter(item_name = data.get('item_name')).count()
                 serializer = self.serializer_class(data=data)
 
                 if serializer.is_valid():
                     
-                    # if product_exist > 1:
-                    #     response = {
-                    #         'success': False,
-                    #         'message': 'Product already exist'
-                    #     }
-                    #     return Response(data=response)
+                    if product_exist > 1:
+                        response = {
+                            'success': False,
+                            'message': 'Product already exist'
+                        }
+                        return Response(data=response)
                     
                     serializer.save()
 
@@ -69,12 +69,11 @@ class ProductsView(generics.GenericAPIView):
                         'data': serializer.data
                     }
                     return Response(data=response, status=status.HTTP_201_CREATED)
-                # print("passed")
-        except Exception as e:
+        except:
             response = {
                 'success': False,
                 'status_code': status.HTTP_400_BAD_REQUEST,
-                'message': 'Check your request and try again' + str(e)
+                'message': 'Check your request and try again'
             }
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
