@@ -50,15 +50,15 @@ class ProductsView(generics.GenericAPIView):
                 data = request.data
                 product_exist = Products.objects.filter(item_name = data.get('item_name')).count()
                 serializer = self.serializer_class(data=data)
-
-                if serializer.is_valid():
-                    
-                    if product_exist > 1:
+                
+                if product_exist > 1:
                         response = {
                             'success': False,
                             'message': 'Product already exist'
                         }
                         return Response(data=response)
+
+                if serializer.is_valid():
                     
                     serializer.save()
 
