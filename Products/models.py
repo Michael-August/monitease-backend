@@ -7,7 +7,7 @@ class Products(models.Model):
     item_name = models.CharField(max_length=80)
     quantity = models.IntegerField()
     total_added = models.IntegerField()
-    percent = models.IntegerField()
+    percent = models.IntegerField(default=0)
     restocklevel = models.IntegerField()
     dateadded = models.DateField(auto_now_add=True)
     dateupdated = models.DateField(auto_now=True)
