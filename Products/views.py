@@ -53,11 +53,11 @@ class ProductsView(generics.GenericAPIView):
                 
                 print(product_exist)
                 if product_exist > 0:
-                        response = {
-                            'success': False,
-                            'message': 'Product already exist'
-                        }
-                        return Response(data=response)
+                    response = {
+                        'success': False,
+                        'message': 'Product already exist'
+                    }
+                    return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
 
                 if serializer.is_valid():
                     
@@ -109,7 +109,14 @@ class ProductsDetailView(generics.GenericAPIView):
                 product = get_object_or_404(Products, pk=product_id)
 
                 serializer = self.serializer_class(data=data, instance=product)
-                product.total_added = product.quantity + serializer.data.get('quantity')
+
+                if serializer.data.get('quantity') < product.quantity:
+                    product.total_added = product.total_added - serializer.data.get('quantity')
+                elif serializer.data.get('quantity') > product.quantity:
+                    product.total_added = product.total_added + serializer.data.get('quantity')
+                else:
+                    product.total_added = product.total_added
+
                 if serializer.is_valid():
                     serializer.save()
 
@@ -177,7 +184,6 @@ class UpdateProductQuantity(generics.GenericAPIView):
                 product = Products.objects.get(pk=product_id)
                 
                 product.total_added = product.total_added + data.get('quantity')
-
                 product.quantity = data.get('quantity') + product.quantity
                 product.datupdated = data.get('dateupdated')
 
