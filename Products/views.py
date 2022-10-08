@@ -106,13 +106,14 @@ class ProductsDetailView(generics.GenericAPIView):
             else:
                 data = request.data
                 product = get_object_or_404(Products, pk=product_id)
+                difference = product.quantity - data.get('quantity')
 
                 serializer = self.serializer_class(data=data, instance=product)
 
                 if data.get('quantity') < product.quantity:
-                    product.total_added = product.total_added - data.get('quantity')
+                    product.total_added = product.total_added - difference
                 elif data.get('quantity') > product.quantity:
-                    product.total_added = product.total_added + data.get('quantity')
+                    product.total_added = product.total_added + difference
                 else:
                     product.total_added = product.total_added
 
