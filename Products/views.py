@@ -51,7 +51,6 @@ class ProductsView(generics.GenericAPIView):
                 product_exist = Products.objects.filter(item_name = data.get('item_name')).count()
                 serializer = self.serializer_class(data=data)
                 
-                print(product_exist)
                 if product_exist > 0:
                     response = {
                         'success': False,
@@ -110,10 +109,10 @@ class ProductsDetailView(generics.GenericAPIView):
 
                 serializer = self.serializer_class(data=data, instance=product)
 
-                if serializer.data.get('quantity') < product.quantity:
-                    product.total_added = product.total_added - serializer.data.get('quantity')
-                elif serializer.data.get('quantity') > product.quantity:
-                    product.total_added = product.total_added + serializer.data.get('quantity')
+                if data.get('quantity') < product.quantity:
+                    product.total_added = product.total_added - data.get('quantity')
+                elif data.get('quantity') > product.quantity:
+                    product.total_added = product.total_added + data.get('quantity')
                 else:
                     product.total_added = product.total_added
 
