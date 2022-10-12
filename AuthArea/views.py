@@ -54,7 +54,7 @@ class RegisterUserView(generics.GenericAPIView):
         # return Response(data=user_data, status=status.HTTP_201_CREATED)
 
     def get(self, request):
-        users = UserModel.objects.all()
+        users = UserModel.objects.all().order_by('-created_at')
 
         serializer = self.serializer_class(instance=users, many=True)
 

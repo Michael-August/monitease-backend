@@ -16,7 +16,7 @@ from .models import Products
 
 class ProductsView(generics.GenericAPIView):
     serializer_class = ProductsSerializer
-    queryset = Products.objects.all()
+    queryset = Products.objects.all().order_by('-dateadded')
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
 
@@ -118,6 +118,7 @@ class ProductsDetailView(generics.GenericAPIView):
                     product.total_added = product.total_added
 
                 if serializer.is_valid():
+                    product.save()
                     serializer.save()
 
                     response = {
