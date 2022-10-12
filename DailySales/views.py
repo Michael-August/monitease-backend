@@ -30,7 +30,7 @@ from reportlab.lib.pagesizes import letter
 class DailySalesListView(generics.GenericAPIView):
     serializer_class = DailySalesSerializer
     pagination_class = CustomPageNumberPagination
-    queryset = DailySales.objects.all()
+    queryset = DailySales.objects.all().order_by('-datesold')
     # queryset = DailySales.objects.raw('SELECT s.id, p.item_name, s.rate, s.customername, s.quantity, s.datesold, s.havepaid, s.datepaid, s.paymentmethod from DailySales_dailysales s join Products_products p on s.itemsold_id=p.id')
     name = 'Daily Sales List'
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
@@ -216,7 +216,7 @@ class SalesFilteredReportView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
     name = 'Filterable Report'
-    queryset = DailySales.objects.all()
+    queryset = DailySales.objects.all().order_by('-datesold')
 
     filter_backends = (DjangoFilterBackend,)
 
@@ -261,7 +261,7 @@ class SalesReportView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
     name = 'Report'
-    queryset = DailySales.objects.all()
+    queryset = DailySales.objects.all().order_by('datesold')
 
     def get(self, request):
         if request.user.role == 'OTHERS':
@@ -330,7 +330,7 @@ class MonthlyReportView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
     name = 'Monthly Report'
-    queryset = DailySales.objects.all()
+    queryset = DailySales.objects.all().order_by('-datesold')
 
 
     def get(self,request):
@@ -371,7 +371,7 @@ class WeeklyReportView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
     name = 'Weekly Report'
-    queryset = DailySales.objects.all()
+    queryset = DailySales.objects.all().order_by('-datesold')
 
 
     def get(self,request):
