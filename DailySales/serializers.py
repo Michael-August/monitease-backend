@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 class DailySalesSerializer(serializers.ModelSerializer):
     customername = serializers.CharField(max_length=100)
-    # soldItem = ProductsSerializer(read_only=True, many=True)
+    item_sold_name = serializers.ReadOnlyField()
     quantity = serializers.IntegerField()
     rate = serializers.IntegerField()
     totalprice = serializers.IntegerField(default=0, read_only=True)
