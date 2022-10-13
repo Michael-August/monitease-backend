@@ -28,6 +28,10 @@ class DailySales(models.Model):
     def __str__(self):
         return self.customername
 
+    @property
+    def item_sold_name(self):
+        return self.itemsold.item_name
+
     def save(self, *args, **kwargs):
         self.totalprice = self.rate * self.quantity
         super(DailySales, self).save(*args, **kwargs)

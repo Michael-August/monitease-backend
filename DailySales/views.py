@@ -74,6 +74,11 @@ class DailySalesListView(generics.GenericAPIView):
                 serializer = self.serializer_class(data=data)
 
                 if serializer.is_valid():
+                    if data.get('havepaid') == True:
+                        # DailySales.datepaid = data.get('datesold')
+                        # DailySales.save()
+                        pass
+
                     serializer.save()
 
                     item_sold_quantity = serializer.data.get('quantity')
