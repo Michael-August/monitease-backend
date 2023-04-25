@@ -119,14 +119,14 @@ WSGI_APPLICATION = 'MonitEase.wsgi.application'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'MonitEaseDb',
-#         'USER': 'postgres',
-#         'PASSWORD': 'pass100%',
-#         'HOST': '127.0.0.1',
-#         'PORT': '5432'
-#     }
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'MonitEaseDb',
+        'USER': 'postgres',
+        'PASSWORD': 'pass100%',
+        'HOST': '127.0.0.1',
+        'PORT': '5432'
+    }
 }
  
 prod_db  =  dj_database_url.config(conn_max_age=500)
