@@ -74,18 +74,18 @@ python manage.py runserver
 
 ### Auth details
 
-email: superuser@gmail.com
-password: superuser100
+email: august@gmail.com
+password: 12345678
 role: admin
 
-email: admin@gmail.com
-password: admin100
+email: secretary@gmail.com
+password: 12345678
 role: secratary
 
-email: otheruser@gmail.com
-password: 0ther100@user
+email: others@gmail.com
+password: 12345678
 role: other
 
-email: directoruser@gmail.com
-password: directoruser100
+email: director@gmail.com
+password: 12345678
 role: director
